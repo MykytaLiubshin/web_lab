@@ -7,7 +7,7 @@ from typing import Optional, Union
 
 from users.models import Profile
 from api.serializers.user import ProfileSerializer
-
+from users.auth import get_user_id, is_authed_decorator
 
 # Class ListComments extends django_rest_framework APIView.
 # Is a simple implementation of a CRUD API View
@@ -44,44 +44,37 @@ class UsersView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    @is_authed_decorator
+    def patch(
+        self,
+        request: WSGIRequest
+    ) -> Response:
+        user = get_object_or_404(Profile, id=get_user_id())
+        body = request.data
+        if 'login' in body:
+            return Response("You can't change your login.", status=400)
+        serializer = ProfileSerializer(
+            user,
+            data = request.data,
+            partial=True
+        )
 
-    # def patch(
-    #     self,
-    #     request: WSGIRequest,
-    #     identificator: Optional[Union[str, int]] = None,
-    # ) -> Response:
-    #     if identificator is None:
-    #         return Response(
-    #             "You did not specify the comment.", status=404
-    #         )
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response(ProfileSerializer(user).data)
+        
+        return Response(
+            serializer.errors, status=status.HTTP_400_BAD_REQUEST
+        )
 
-    #     comment = get_object_or_404(Comment, id=identificator)
-    #     serializer = CommentSerializer(
-    #         comment, data=request.data, partial=True
-    #     )
-    #     if serializer.is_valid():
-    #         comment = serializer.save()
-    #         return Response(CommentSerializer(comment).data)
-    #     return Response(
-    #         serializer.errors, status=status.HTTP_400_BAD_REQUEST
-    #     )
+    @is_authed_decorator
+    def delete(
+        self,
+        request: WSGIRequest,
+        identificator: Optional[Union[str, int]] = None,
+    ) -> Response:
+        user = get_object_or_404(Profile, id=get_user_id())
+        prev_username = str(user)
 
-    # def delete(
-    #     self,
-    #     request: WSGIRequest,
-    #     identificator: Optional[Union[str, int]] = None,
-    # ) -> Response:
-    #     if identificator is None:
-    #         return Response(
-    #             "You did not specify the comment.", status=404
-    #         )
-    #     comment = get_object_or_404(Comment, id=identificator)
-    #     parent = Post.objects.filter(id=comment.post_id)
-    #     Removing a child comment from the parent Post object
-
-    #     _ch = parent[0].children
-    #     _ch = list(filter(lambda ind: ind != comment.id, _ch))
-
-    #     parent.update(children=_ch)
-    #     comment.delete()
-    #     return Response(f"Comment {identificator} deleted successfully")
+        user.delete()
+        return Response(f"You just have deleted your account. Goodbye, {prev_username}!")

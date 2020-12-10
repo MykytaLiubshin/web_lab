@@ -8,6 +8,18 @@ from users.models import Profile
 redis_manager = get_redis_instance()
 
 
+def get_user_id(redis = redis_manager):
+	return redis.Rget("PersonID")
+
+def is_authed_decorator(func):
+	redis = get_redis_instance()
+	if redis.Rget("PersonID") is None:
+		return HttpResponse("You are not logged in. Log in to perform such actions.", status=401)
+	def f(*args, **kwargs):
+		return func(*args, **kwargs)
+	
+	return f
+
 def Unathorized_401():
 	return HttpResponse("Login or password is wrong", status=401)
 

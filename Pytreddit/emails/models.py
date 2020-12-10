@@ -14,7 +14,7 @@ class Forum(models.Model):
 
 class Letter(models.Model):
     contents = models.TextField()
-
+    from_user = models.OneToOneField( Profile , on_delete=models.CASCADE)
     reply_to = models.OneToOneField(
         "self", blank=True,
         null=True,
@@ -26,15 +26,10 @@ class Letter(models.Model):
         default=list,
     )
 
-class Email(models.Model):
-    to_user = models.ManyToManyField(Profile, blank=True)
+class Email(Letter, models.Model):
+    to_user = ArrayField(models.IntegerField())
     subject = models.CharField(max_length=1000)
 
-class ForumMessage(models.Model):
-    to_forum = models.ManyToManyField(Forum, blank=True, default=list)
-    contents = models.TextField()
-    contents_files = ArrayField(
-        models.FileField(blank=True, null=True, storage=fs),
-        blank=True,
-        default=list,
-    )
+
+class ForumMessage(Letter, models.Model):
+    to_forum = models.OneToOneField(Forum, blank=True, on_delete = models.CASCADE)
