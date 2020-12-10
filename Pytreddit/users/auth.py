@@ -23,8 +23,12 @@ def authorize(user_query, body, redis = redis_manager):
 
 
 def login(request, redis=redis_manager):
+	if redis.Rget('PersonID'):
+		return HttpResponse("You are still logged in.", status=400)
+
 	body = loads(request.body)
 	keys = body.keys()
+
 	if "password" in keys:
 		user = Profile.objects.all()
 		if "login" in keys:
@@ -40,3 +44,11 @@ def login(request, redis=redis_manager):
 			return authorize(user, body)
 
 	return Unathorized_401()
+
+
+def logout(request, redis=redis_manager):
+	if redis.Rget('PersonID'):
+		redis.Rdelete('PersonID')
+		return HttpResponse("Logged out successfully", status=200)
+
+	return HttpResponse("You are currently logged out.", status=401)

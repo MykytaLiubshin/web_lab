@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework import routers
-from users.auth import login
+from users.auth import login, logout
 
 router = routers.DefaultRouter()
 
@@ -14,4 +14,6 @@ urlpatterns = [
     ),
     path("users/", include("users.urls")),
     path("login", login),
+    path("logout", logout),
+
 ]
