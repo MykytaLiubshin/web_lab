@@ -9,6 +9,8 @@ from rest_framework.response import Response
 
 redis_manager = get_redis_instance()
 
+def get_current_user():
+    return get_object_or_404(Profile, id=get_user_id())
 
 def get_user_id(redis = redis_manager):
 	return redis.Rget("PersonID")

@@ -16,5 +16,7 @@ urlpatterns = [
     path("emails/", include("emails.urls")),
     path("login", login),
     path("logout", logout),
+    path("inbox", logout),
+    path("sent", logout),
 
 ]
