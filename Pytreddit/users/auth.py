@@ -4,6 +4,8 @@ from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse
 from Pytreddit.redis_utils import get_redis_instance
 from users.models import Profile
+from rest_framework.response import Response
+
 
 redis_manager = get_redis_instance()
 
@@ -11,14 +13,8 @@ redis_manager = get_redis_instance()
 def get_user_id(redis = redis_manager):
 	return redis.Rget("PersonID")
 
-def is_authed_decorator(func):
-	redis = get_redis_instance()
-	if redis.Rget("PersonID") is None:
-		return HttpResponse("You are not logged in. Log in to perform such actions.", status=401)
-	def f(*args, **kwargs):
-		return func(*args, **kwargs)
-	
-	return f
+def clear_from_cache(redis = redis_manager):
+	return redis.Rdelete("PersonID")
 
 def Unathorized_401():
 	return HttpResponse("Login or password is wrong", status=401)
@@ -30,7 +26,6 @@ def authorize(user_query, body, redis = redis_manager):
 		return Unathorized_401()
 	user = user[0]
 	redis_manager.Rput('PersonID',user.id)
-	print(redis_manager.Rget('PersonID'))
 	return HttpResponse(f"Welcome {str(user)}", status=200)
 
 

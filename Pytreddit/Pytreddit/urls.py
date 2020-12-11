@@ -13,6 +13,7 @@ urlpatterns = [
         include("rest_framework.urls", namespace="rest_framework"),
     ),
     path("users/", include("users.urls")),
+    path("emails/", include("emails.urls")),
     path("login", login),
     path("logout", logout),
 

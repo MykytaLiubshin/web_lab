@@ -7,7 +7,8 @@ from typing import Optional, Union
 
 from users.models import Profile
 from api.serializers.user import ProfileSerializer
-from users.auth import get_user_id, is_authed_decorator
+from users.auth import get_user_id, clear_from_cache
+from Pytreddit.redis_utils import get_redis_instance
 
 # Class ListComments extends django_rest_framework APIView.
 # Is a simple implementation of a CRUD API View
@@ -16,16 +17,10 @@ class UsersView(APIView):
         self,
         request: WSGIRequest,
         _identificator: Optional[Union[str, int]] = None,
-        _username: Optional[str] = None,
-        _phone: Optional[str] = None,
     ) -> Response:
         user = []
         if _identificator is not None:
             user = get_object_or_404(Profile, id=_identificator)
-        elif _username is not None:
-            user = Profile.objects.filter(username=_username)
-        elif _phone is not None:
-            user = Profile.objects.filter(phone=_phone)
         serializer = ProfileSerializer(user, many=False)
 
         if user is None:
@@ -44,11 +39,17 @@ class UsersView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    @is_authed_decorator
+
+
+    
     def patch(
         self,
         request: WSGIRequest
     ) -> Response:
+        redis = get_redis_instance()
+        if redis.Rget("PersonID") is None:
+            return Response("You are not logged in. Log in to perform such actions.", status=401)
+
         user = get_object_or_404(Profile, id=get_user_id())
         body = request.data
         if 'login' in body:
@@ -67,14 +68,19 @@ class UsersView(APIView):
             serializer.errors, status=status.HTTP_400_BAD_REQUEST
         )
 
-    @is_authed_decorator
     def delete(
         self,
         request: WSGIRequest,
         identificator: Optional[Union[str, int]] = None,
     ) -> Response:
+        redis = get_redis_instance()
+        if redis.Rget("PersonID") is None:
+            return Response("You are not logged in. Log in to perform such actions.", status=401)
+
+        clear_from_cache()
         user = get_object_or_404(Profile, id=get_user_id())
         prev_username = str(user)
 
         user.delete()
+        
         return Response(f"You just have deleted your account. Goodbye, {prev_username}!")
